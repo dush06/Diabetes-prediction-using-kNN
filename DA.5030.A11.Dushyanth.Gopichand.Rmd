@@ -1,0 +1,193 @@
+---
+
+author: "Dushyanth Gopichand"
+date: "04/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(caret)
+```
+
+Q1
+```{r}
+#loading the data from the PC
+diabetes_data_ori <- read.csv("/Users/dushyanth/Desktop/DA5030 ASS 11/diabetes.csv",  header= TRUE)
+#summary statistics of the data
+str(diabetes_data_ori)
+summary(diabetes_data_ori)
+view(diabetes_data_ori)
+```
+
+**Answer**
+Most of the variables in the data-set belongs to the class integer, and few from the class numeric. The max and min values of all the explanatory variables is tabulated. 
+
+Q2
+```{r}
+#max-min normalization of explanatory variables
+#function for normalization 
+normalize <- function(x) 
+  {
+return ((x - min(x)) / (max(x) - min(x))) 
+}
+#normalization of each explanatory variables
+diabetes_data <- as.data.frame(lapply(diabetes_data_ori[1:8], normalize))
+diabetes_data$Outcome <- diabetes_data_ori$Outcome
+diabetes_data
+```
+
+**Answer**
+diabetes_data is the data-set with all the explanatory variables normalized. 
+
+Q3
+```{r}
+#80:20 Split of the data into a training set and a test set. 
+dt <- sort(sample(nrow(diabetes_data), nrow(diabetes_data)*0.8))
+train_diabetes_data <- diabetes_data[dt,]
+test_diabetes_data <- diabetes_data[-dt,]
+```
+
+**Answer**
+the train data-set has  614 columns
+and the test data-set has  154 columns
+
+Q4
+```{r}
+#or_k = nrow(train_diabetes_data)
+#k = round(sqrt(for_k))
+
+# Calculate distance
+# distance between p and q
+dist <- function(p, q)
+{
+d <- 0
+for (i in 1:length(p)) {
+d <- d + (p[i] - q[i])^2
+}
+distance <- sqrt(d)
+distance <- distance[[1]]
+}
+
+ 
+# Calculate neighbors
+neighbors <- function(train_diabetes_data, test_diabetes_data)
+{
+m <- nrow(train_diabetes_data)
+ds <- numeric(m)
+q <- test_diabetes_data[c(1:8)]
+for (i in 1:m) {
+p <- train_diabetes_data[i, c(1:8)]
+ds[i] <- dist(p,q)
+}
+neighbors <- ds
+}
+
+# Find k-closest
+k.closest <- function(neighbors, k)
+{
+ordered.neighbors <- order(neighbors)
+k.closest <- ordered.neighbors[1:k]
+}
+#mode function
+Mode <- function(x)
+{
+ux <- unique(x)
+ux[which.max(tabulate(match(x, ux)))]
+}
+
+
+# Predict neighbors
+knn_predict <- function(train_diabetes_data, test_diabetes_data, k)
+{
+pred <- numeric(nrow(test_diabetes_data))
+for (i in 1:nrow(test_diabetes_data))
+  {
+nb <- neighbors(train_diabetes_data, as.numeric(test_diabetes_data[i,]))
+f <- k.closest(nb, k)
+knn <- Mode(train_diabetes_data$Outcome[f])
+pred[i] <- knn
+}
+return(pred)
+}
+
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 25)
+prediction_knn
+```
+
+**Answer**
+prediction_knn() function return a vector of predictions for all observations in the test set. 
+
+Q5
+```{r}
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 25)
+prediction_knn <- as.factor(prediction_knn)
+test_diabetes_data$Outcome <- as.factor(test_diabetes_data$Outcome)
+conf_matr <- confusionMatrix(prediction_knn, test_diabetes_data$Outcome)
+conf_matr
+```
+
+**Explanation**
+The suitable value I considered for k = 25. 
+The results analysed based on confusion matrix.
+For k=25, I got an accuracy of 0.7532 that is 75.32%
+The results optioned by confusion matrix is as follows.
+true positive = 94, that is, both model and actual data predicted diabetes.
+true negative = 22, that is, both model and actual data showed diabetes in the patient
+false positive = 10, that is the model predicted diabetes but the actual data had no diabetes for the patient.
+false negative = 28, the model predicted no diabetes but the actual data showed diabetes for the patient.
+
+
+Q6
+```{r}
+#performing knn_predict() function for different values of k.
+# k=5 
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 5)
+prediction_knn <- as.factor(prediction_knn)
+test_diabetes_data$Outcome <- as.factor(test_diabetes_data$Outcome)
+conf_matr_k5 <- confusionMatrix(prediction_knn, test_diabetes_data$Outcome)
+conf_matr_k5
+
+# k = 10
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 10)
+prediction_knn <- as.factor(prediction_knn)
+test_diabetes_data$Outcome <- as.factor(test_diabetes_data$Outcome)
+conf_matr_k10 <- confusionMatrix(prediction_knn, test_diabetes_data$Outcome)
+conf_matr_k10
+
+# k = 15
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 15)
+prediction_knn <- as.factor(prediction_knn)
+test_diabetes_data$Outcome <- as.factor(test_diabetes_data$Outcome)
+conf_matr_k15 <- confusionMatrix(prediction_knn, test_diabetes_data$Outcome)
+conf_matr_k15
+
+# k = 30
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 30)
+prediction_knn <- as.factor(prediction_knn)
+test_diabetes_data$Outcome <- as.factor(test_diabetes_data$Outcome)
+conf_matr_k30 <- confusionMatrix(prediction_knn, test_diabetes_data$Outcome)
+conf_matr_k30
+
+# k = 40
+prediction_knn <- knn_predict(train_diabetes_data, test_diabetes_data, 40)
+prediction_knn <- as.factor(prediction_knn)
+test_diabetes_data$Outcome <- as.factor(test_diabetes_data$Outcome)
+conf_matr_k40 <- confusionMatrix(prediction_knn, test_diabetes_data$Outcome)
+conf_matr_k40
+```
+
+**Explanation**
+The k values I considered for this question are, k=5,10,15, 30 and 40. 
+For K = 5 , the model produced an accuracy of 74.03%
+For K = 10,  the model produced an accuracy of 74.68%
+For K = 15,  the model produced an accuracy of 74.68%
+For K = 30,  the model produced an accuracy of 74.68%
+For K = 40,  the model produced an accuracy of 75.95%
+
+For K = 40, model produced the most accurate prediction, with an accuracy of 75.95%
